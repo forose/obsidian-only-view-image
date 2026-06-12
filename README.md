@@ -1,8 +1,6 @@
-# Obsidian Image Tools
+# Obsidian Only View Image
 
-一个为 Obsidian 提供沉浸式图片查看体验的插件。
-
-在阅读视图或编辑视图中，按住快捷键点击图片即可进入图片查看模式，支持缩放、旋转等操作。
+查看图片，仅此而已
 
 ## 功能特性
 
