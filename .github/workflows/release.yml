@@ -69,4 +69,4 @@ jobs:
                   gh release create "$tag" \
                     --title="$clean_tag" \
                     --draft \
-                    main.js manifest.json styles.css obsidian-image-tools-${clean_tag}.zip
+                    obsidian-image-tools-${clean_tag}.zip
