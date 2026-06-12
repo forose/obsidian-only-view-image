@@ -3,7 +3,7 @@ name: Release Obsidian plugin
 on:
     push:
         tags:
-            - '*'
+            - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
     build:
@@ -13,12 +13,12 @@ jobs:
             id-token: write
             attestations: write
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v4
 
             - name: Use Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v4
               with:
-                  node-version: 24
+                  node-version: 20
                   cache: 'npm'
 
             - name: Build plugin
@@ -26,13 +26,36 @@ jobs:
                   npm ci
                   npm run build
 
+            - name: Lint check
+              run: npm run lint
+
+            - name: Validate manifest
+              run: |
+                  node -e "
+                    const m = require('./manifest.json');
+                    if (!m.id || m.id.includes(' ')) { console.error('manifest.json id 无效，不能包含空格'); process.exit(1); }
+                    if (!m.version) { console.error('manifest.json 缺少 version'); process.exit(1); }
+                    if (!m.minAppVersion) { console.error('manifest.json 缺少 minAppVersion'); process.exit(1); }
+                    console.log('manifest.json 验证通过: ' + m.id + '@' + m.version);
+                  "
+
+            - name: Verify version match
+              run: |
+                  tag="${GITHUB_REF#refs/tags/}"
+                  manifest_version=$(node -p "require('./manifest.json').version")
+                  if [ "$tag" != "$manifest_version" ]; then
+                    echo "错误: tag ($tag) 与 manifest.json version ($manifest_version) 不一致"
+                    exit 1
+                  fi
+                  echo "版本匹配: $tag"
+
             - name: Check for optional styles
               id: styles
               run: |
                   [ -f styles.css ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
 
             - name: Attest build provenance
-              uses: actions/attest@v4
+              uses: actions/attest-build-provenance@v1
               with:
                   subject-path: |
                       main.js

@@ -1,92 +1,84 @@
-# Obsidian Sample Plugin
+# Obsidian Image Tools
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+一个为 Obsidian 提供沉浸式图片查看体验的插件。
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+在阅读视图或编辑视图中，按住快捷键点击图片即可进入图片查看模式，支持缩放、旋转等操作。
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+## 功能特性
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+- **快捷触发** — Windows/Linux 默认 `Ctrl + 鼠标左键`，macOS 默认 `Cmd + 鼠标左键`，快捷键可自定义
+- **智能缩放** — 图片按窗口比例自适应显示，滚轮可继续缩放
+- **旋转操作** — 支持左旋/右旋 90°，一键重置视图
+- **毛玻璃遮罩** — 可选的背景模糊效果，强度和不透明度可调
+- **点击空白关闭** — 点击图片以外区域即可退出查看模式
+- **拖拽移动** — 可选开启图片拖拽移动
+- **主题适配** — 自动适配 Obsidian 深色/浅色主题
+- **Material Design** — 工具栏采用 Google Material Design 风格
 
-## First time developing plugins?
+## 使用方式
 
-Quick starting guide for new plugin devs:
+1. 在文档中找到想要查看的图片
+2. 按住 `Ctrl`（macOS 为 `Cmd`）键，点击图片
+3. 进入查看模式后：
+   - **滚轮** — 缩放图片
+   - **ESC** — 退出查看模式
+   - **底部工具栏** — 旋转、重置、关闭
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+## 插件设置
 
-## Releasing new releases
+| 设置项 | 默认值 | 说明 |
+|--------|--------|------|
+| 系统平台 | 自动检测 | 选择操作系统，决定修饰键选项 |
+| 修饰键 | Win: Ctrl / Mac: Cmd | 触发查看模式的修饰键 |
+| 鼠标按键 | 左键 | 触发查看模式的鼠标按键 |
+| 初始显示比例 | 80% | 图片占窗口的百分比 |
+| 点击空白区域关闭 | 开启 | 点击图片以外区域关闭查看模式 |
+| 允许拖拽移动 | 关闭 | 在查看模式下拖拽移动图片 |
+| 启用毛玻璃 | 关闭 | 为背景遮罩添加模糊效果 |
+| 模糊强度 | 16px | 遮罩层的模糊程度 |
+| 遮罩不透明度 | 0.5 | 遮罩层的暗度 |
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+## 安装
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+### 手动安装
 
-## Adding your plugin to the community plugin list
+1. 从 [Releases](https://github.com/lspzc/obsidian-image-tools/releases) 下载最新版本
+2. 将 `main.js`、`styles.css`、`manifest.json` 复制到你的 Vault 目录下：`VaultFolder/.obsidian/plugins/obsidian-image-tools/`
+3. 重启 Obsidian
+4. 在 **设置 → 社区插件** 中启用本插件
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+### 从源码构建
 
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
+```bash
+git clone https://github.com/lspzc/obsidian-image-tools.git
+cd obsidian-image-tools
+npm install
+npm run build
 ```
 
-If you have multiple URLs, you can also do:
+将生成的 `main.js`、`styles.css`、`manifest.json` 复制到插件目录即可。
 
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
+## 开发
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式（监听文件变化自动重新编译）
+npm run dev
+
+# 生产构建
+npm run build
+
+# 代码检查
+npm run lint
 ```
 
-## API Documentation
+## 兼容性
 
-See https://docs.obsidian.md
+- 最低 Obsidian 版本：1.0.0
+- 支持桌面端和移动端
+
+## 许可证
+
+0-BSD

@@ -1,11 +1,11 @@
 {
-	"id": "obsidian-image-tools",
-	"name": "obsidian-image-tools",
-	"version": "1.0.0",
+	"id": "lspzc-only-view-image",
+	"name": "lspzc x only view image",
+	"version": "1.0.1",
 	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "查看图片，仅此而已",
+	"author": "lspzc",
+	"authorUrl": "https://github.com/lspzc/obsidian-only-view-image",
+	"fundingUrl": "https://github.com/lspzc/obsidian-only-view-image/issues",
 	"isDesktopOnly": false
 }

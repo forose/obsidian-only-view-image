@@ -11,7 +11,6 @@ import type { ImageViewerSettings, ModifierKey } from './types';
 const MODIFIER_MAP: Record<ModifierKey, keyof MouseEvent> = {
     Ctrl: 'ctrlKey',
     Alt: 'altKey',
-    Shift: 'shiftKey',
     Meta: 'metaKey',
 };
 
@@ -65,6 +64,8 @@ export class ImageViewer {
             mouseup: null,
             mousedown: null,
         };
+    /** 遮罩层点击关闭的监听器引用 */
+    private overlayClickHandler: ((e: MouseEvent) => void) | null = null;
 
     constructor(settings: ImageViewerSettings) {
         this.settings = settings;
@@ -96,7 +97,7 @@ export class ImageViewer {
 
         // 检查未配置的修饰键是否未按下（避免误触发）
         const configuredMods = new Set(modifiers);
-        const allMods: ModifierKey[] = ['Ctrl', 'Alt', 'Shift', 'Meta'];
+        const allMods: ModifierKey[] = ['Ctrl', 'Alt', 'Meta'];
         for (const mod of allMods) {
             if (!configuredMods.has(mod)) {
                 const key = MODIFIER_MAP[mod];
@@ -105,6 +106,27 @@ export class ImageViewer {
         }
 
         return true;
+    }
+
+    /**
+     * 根据图片原始尺寸和窗口大小，计算使图片占窗口指定比例的缩放值
+     * @param naturalWidth 图片原始宽度
+     * @param naturalHeight 图片原始高度
+     * @returns CSS scale 值
+     */
+    private calculateFitScale(naturalWidth: number, naturalHeight: number): number {
+        const windowWidth = activeWindow.innerWidth;
+        const windowHeight = activeWindow.innerHeight;
+        const fitRatio = this.settings.initialFitPercent / 100;
+
+        // 可用区域
+        const availWidth = windowWidth * fitRatio;
+        const availHeight = windowHeight * fitRatio;
+
+        // 计算宽高比缩放，取较小值确保图片完整显示
+        const scaleX = availWidth / naturalWidth;
+        const scaleY = availHeight / naturalHeight;
+        return Math.min(scaleX, scaleY);
     }
 
     /**
@@ -119,7 +141,7 @@ export class ImageViewer {
         }
 
         // 初始化状态
-        this.currentScale = this.settings.initialScale;
+        this.currentScale = 1;
         this.currentRotation = 0;
         this.offset = { x: 0, y: 0 };
         this.isDragging = false;
@@ -129,15 +151,33 @@ export class ImageViewer {
             cls: 'image-viewer-overlay',
         });
 
+        // 应用遮罩层样式（毛玻璃、不透明度）
+        this.applyOverlayStyles();
+
         // 创建图片容器
         this.imageContainer = this.overlay.createEl('div', {
             cls: 'image-viewer-container',
         });
 
-        // 创建图片元素
+        // 开启拖拽时添加对应类
+        if (this.settings.draggable) {
+            this.imageContainer.classList.add('is-draggable');
+        }
+
+        // 创建图片元素（初始隐藏，避免原始尺寸闪烁）
         this.imageEl = this.imageContainer.createEl('img', {
-            cls: 'image-viewer-image',
+            cls: 'image-viewer-image image-viewer-image-loading',
             attr: { src: imgSrc, draggable: 'false' },
+        });
+
+        // 图片加载完成后计算初始缩放并显示
+        this.imageEl.addEventListener('load', () => {
+            const naturalWidth = this.imageEl?.naturalWidth ?? 0;
+            const naturalHeight = this.imageEl?.naturalHeight ?? 0;
+            this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
+            this.applyTransform();
+            // 移除加载中类，显示图片
+            this.imageEl?.classList.remove('image-viewer-image-loading');
         });
 
         // 创建工具栏
@@ -146,14 +186,34 @@ export class ImageViewer {
         });
         this.buildToolbar();
 
-        // 应用初始变换
-        this.applyTransform();
-
         // 注册事件监听器
         this.bindEvents();
 
         // 阻止遮罩层上的滚轮事件穿透到页面
         this.overlay.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false });
+    }
+
+    /**
+     * 应用遮罩层样式（毛玻璃、不透明度）
+     * 通过 CSS 变量传递动态参数，CSS 类中引用这些变量
+     */
+    private applyOverlayStyles(): void {
+        if (!this.overlay) return;
+
+        const blurConfig = this.settings.blur;
+
+        // 设置 CSS 变量供样式表使用
+        this.overlay.style.setProperty('--image-viewer-blur-strength', `${blurConfig.strength}px`);
+        this.overlay.style.setProperty('--image-viewer-overlay-opacity', `${blurConfig.overlayOpacity}`);
+
+        // 根据是否启用毛玻璃添加对应类
+        if (blurConfig.enabled) {
+            this.overlay.classList.add('image-viewer-blur-enabled');
+            this.overlay.classList.remove('image-viewer-blur-disabled');
+        } else {
+            this.overlay.classList.add('image-viewer-blur-disabled');
+            this.overlay.classList.remove('image-viewer-blur-enabled');
+        }
     }
 
     /**
@@ -188,23 +248,29 @@ export class ImageViewer {
         this.boundHandlers.keydown = (e: KeyboardEvent) => this.onKeyDown(e);
         activeDocument.addEventListener('keydown', this.boundHandlers.keydown);
 
-        // 拖拽移动图片
-        this.boundHandlers.mousedown = (e: MouseEvent) => this.onMouseDown(e);
-        this.imageContainer?.addEventListener('mousedown', this.boundHandlers.mousedown);
+        // 拖拽移动图片（仅开启拖拽设置时）
+        if (this.settings.draggable) {
+            this.boundHandlers.mousedown = (e: MouseEvent) => this.onMouseDown(e);
+            this.imageContainer?.addEventListener('mousedown', this.boundHandlers.mousedown);
 
-        this.boundHandlers.mousemove = (e: MouseEvent) => this.onMouseMove(e);
-        activeDocument.addEventListener('mousemove', this.boundHandlers.mousemove);
+            this.boundHandlers.mousemove = (e: MouseEvent) => this.onMouseMove(e);
+            activeDocument.addEventListener('mousemove', this.boundHandlers.mousemove);
 
-        this.boundHandlers.mouseup = () => this.onMouseUp();
-        activeDocument.addEventListener('mouseup', this.boundHandlers.mouseup);
+            this.boundHandlers.mouseup = () => this.onMouseUp();
+            activeDocument.addEventListener('mouseup', this.boundHandlers.mouseup);
+        }
 
-        // 点击遮罩层空白区域关闭
-        this.overlay?.addEventListener('click', (e: MouseEvent) => {
-            // 仅在点击遮罩层本身时关闭（非图片区域）
-            if (e.target === this.overlay) {
-                this.close();
-            }
-        });
+        // 点击遮罩层空白区域关闭（仅开启点击关闭设置时）
+        if (this.settings.clickToClose) {
+            this.overlayClickHandler = (e: MouseEvent) => {
+                const target = e.target as HTMLElement;
+                // 点击图片容器（非图片本身）或遮罩层时关闭
+                if (target === this.overlay || target === this.imageContainer) {
+                    this.close();
+                }
+            };
+            this.overlay?.addEventListener('click', this.overlayClickHandler);
+        }
     }
 
     /**
@@ -226,6 +292,9 @@ export class ImageViewer {
         if (this.boundHandlers.mouseup) {
             activeDocument.removeEventListener('mouseup', this.boundHandlers.mouseup);
         }
+        if (this.overlayClickHandler) {
+            this.overlay?.removeEventListener('click', this.overlayClickHandler);
+        }
 
         // 重置引用
         this.boundHandlers = {
@@ -235,6 +304,7 @@ export class ImageViewer {
             mouseup: null,
             mousedown: null,
         };
+        this.overlayClickHandler = null;
     }
 
     /**
@@ -257,7 +327,9 @@ export class ImageViewer {
 
         // 重置按钮
         this.createToolbarButton('restart_alt', '重置视图', () => {
-            this.currentScale = this.settings.initialScale;
+            const naturalWidth = this.imageEl?.naturalWidth ?? 0;
+            const naturalHeight = this.imageEl?.naturalHeight ?? 0;
+            this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
             this.currentRotation = 0;
             this.offset = { x: 0, y: 0 };
             this.applyTransform();
