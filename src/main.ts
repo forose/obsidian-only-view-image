@@ -1,114 +1,71 @@
-import {
-	Editor,
-	MarkdownView,
-	MarkdownFileInfo,
-	Modal,
-	Notice,
-	Plugin,
-} from 'obsidian';
-import {
-	DEFAULT_SETTINGS,
-	MyPluginSettings,
-	SampleSettingTab,
-} from './settings';
+/**
+ * 图片查看器插件 - 入口文件
+ *
+ * 负责插件生命周期管理（加载/卸载）、设置持久化、
+ * 全局事件监听器的注册与清理。
+ */
 
-// Remember to rename these classes and interfaces!
+import { Plugin } from 'obsidian';
+import { DEFAULT_SETTINGS, ImageViewerSettingTab } from './settings';
+import type { ImageViewerSettings } from './types';
+import { ImageViewer } from './viewer';
 
-export default class MyPlugin extends Plugin {
-	settings!: MyPluginSettings;
+export default class ImageViewerPlugin extends Plugin {
+	settings!: ImageViewerSettings;
+	/** 图片查看器实例 */
+	private viewer: ImageViewer | null = null;
+	/** 文档点击事件处理函数引用 */
+	private clickHandler: ((e: MouseEvent) => void) | null = null;
 
 	async onload() {
+		// 加载设置
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+		// 创建图片查看器实例
+		this.viewer = new ImageViewer(this.settings);
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+		// 注册全局鼠标点击事件监听器
+		// 使用捕获阶段确保在 Obsidian 默认处理之前拦截
+		this.clickHandler = (e: MouseEvent) => {
+			this.viewer?.handleDocumentClick(e);
+		};
+		activeDocument.addEventListener('mousedown', this.clickHandler, true);
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			},
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (
-				editor: Editor,
-				_ctx: MarkdownView | MarkdownFileInfo,
-			) => {
-				editor.replaceSelection('Sample editor command');
-			},
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView =
-					this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			},
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(activeDocument, 'click', (_evt: MouseEvent) => {
-			new Notice('Click');
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(
-			window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000),
-		);
+		// 注册设置面板
+		this.addSettingTab(new ImageViewerSettingTab(this.app, this));
 	}
 
-	onunload() {}
+	onunload() {
+		// 移除全局事件监听器
+		if (this.clickHandler) {
+			activeDocument.removeEventListener('mousedown', this.clickHandler, true);
+			this.clickHandler = null;
+		}
 
+		// 销毁查看器，释放所有资源
+		if (this.viewer) {
+			this.viewer.destroy();
+			this.viewer = null;
+		}
+	}
+
+	/**
+	 * 加载设置，合并默认值
+	 */
 	async loadSettings() {
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<MyPluginSettings>,
+			await this.loadData() as Partial<ImageViewerSettings>,
 		);
 	}
 
+	/**
+	 * 保存设置，并同步更新查看器实例
+	 */
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
+		// 同步更新查看器中的设置引用
+		this.viewer?.updateSettings(this.settings);
 	}
 }
