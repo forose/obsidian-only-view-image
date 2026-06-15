@@ -334,12 +334,31 @@ export class ImageViewer {
             this.currentRotation += 90;
             this.applyTransform();
         });
-        this.createZoomToggleButton();
+        // 适应屏幕按钮
+        this.createToolbarButton('Zoom_in', '适应窗口', (btn) => {
+            this.zoomMode = this.settings.autoZoom ? 'fit' : 'actual';
+            if (this.zoomMode === 'fit') {
+                // 切换到实际尺寸
+                this.zoomMode = 'actual';
+                this.currentScale = 1;
+                btn?.setAttribute('title', '适应窗口');
+            } else {
+                // 切换到适应窗口
+                this.zoomMode = 'fit';
+                const naturalWidth = this.imageEl?.naturalWidth ?? 0;
+                const naturalHeight = this.imageEl?.naturalHeight ?? 0;
+                btn?.setAttribute('title', '实际尺寸');
+                this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
+            }
+            
+            this.currentRotation = 0;
+            this.offset = { x: 0, y: 0 };
+            this.applyTransform();
+        });
         // 重置按钮
         this.createToolbarButton('restart_alt', '重置视图', () => {
             const naturalWidth = this.imageEl?.naturalWidth ?? 0;
             const naturalHeight = this.imageEl?.naturalHeight ?? 0;
-            console.warn(this.settings.autoZoom)
             if (this.settings.autoZoom) {
                 this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
             } else {
@@ -360,7 +379,7 @@ export class ImageViewer {
      * 创建工具栏按钮
      * 使用 Google Material Symbols 图标
      */
-    private createToolbarButton(icon: string, title: string, onClick: () => void): void {
+    private createToolbarButton(icon: string, title: string, onClick: (btn?: HTMLElement) => void): void {
         if (!this.toolbar) return;
 
         const btn = this.toolbar.createEl('button', {
@@ -375,46 +394,7 @@ export class ImageViewer {
 
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            onClick();
-        });
-    }
-    // 单独创建缩放按钮的方法
-    private createZoomToggleButton(): void {
-        if (!this.toolbar) return;
-        
-        // 初始化 zoomMode
-        this.zoomMode = this.settings.autoZoom ? 'fit' : 'actual';
-        
-        const btn = this.toolbar.createEl('button', {
-            cls: 'image-viewer-toolbar-btn',
-            attr: { title: this.zoomMode === 'fit' ? '切换到实际尺寸' : '适应窗口' },
-        });
-        
-        btn.createEl('span', {
-            cls: 'material-symbols-rounded',
-            text: 'Zoom_in',
-        });
-        
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            if (this.zoomMode === 'fit') {
-                // 切换到实际尺寸
-                this.zoomMode = 'actual';
-                this.currentScale = 1;
-                btn.setAttribute('title', '适应窗口');
-            } else {
-                // 切换到适应窗口
-                this.zoomMode = 'fit';
-                const naturalWidth = this.imageEl?.naturalWidth ?? 0;
-                const naturalHeight = this.imageEl?.naturalHeight ?? 0;
-                this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
-                btn.setAttribute('title', '实际尺寸');
-            }
-            
-            this.currentRotation = 0;
-            this.offset = { x: 0, y: 0 };
-            this.applyTransform();
+            onClick(btn);
         });
     }
     /**
