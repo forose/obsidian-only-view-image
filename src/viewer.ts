@@ -40,7 +40,7 @@ export class ImageViewer {
     private imageEl: HTMLImageElement | null = null;
     /** 工具栏元素 */
     private toolbar: HTMLElement | null = null;
-    private zoomMode: 'fit' | 'actual' = 'fit'; // fit: 适应窗口, actual: 实际尺寸
+    private zoomMode: 'fit' | 'actual' | null = null; // fit: 适应窗口, actual: 实际尺寸
     /** 当前缩放比例 */
     private currentScale: number = 1;
     /** 当前旋转角度 */
@@ -335,8 +335,8 @@ export class ImageViewer {
             this.applyTransform();
         });
         // 适应屏幕按钮
-        this.createToolbarButton('Zoom_in', '适应窗口', (btn) => {
-            this.zoomMode = this.settings.autoZoom ? 'fit' : 'actual';
+        this.createToolbarButton('fit_screen', '适应窗口', (btn) => {
+            this.zoomMode = this.zoomMode ?? (this.settings.autoZoom ? 'fit' : 'actual');
             if (this.zoomMode === 'fit') {
                 // 切换到实际尺寸
                 this.zoomMode = 'actual';
@@ -350,7 +350,6 @@ export class ImageViewer {
                 btn?.setAttribute('title', '实际尺寸');
                 this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
             }
-            
             this.currentRotation = 0;
             this.offset = { x: 0, y: 0 };
             this.applyTransform();
