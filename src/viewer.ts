@@ -5,21 +5,7 @@
  * 当查看器关闭时，所有 DOM 元素和事件监听器都会被清理。
  */
 
-import type { ImageViewerSettings, ModifierKey } from './types';
-
-/** 修饰键到 MouseEvent 属性的映射 */
-const MODIFIER_MAP: Record<ModifierKey, keyof MouseEvent> = {
-    Ctrl: 'ctrlKey',
-    Alt: 'altKey',
-    Meta: 'metaKey',
-};
-
-/** 鼠标按键到 button 值的映射 */
-const BUTTON_MAP: Record<string, number> = {
-    left: 0,
-    middle: 1,
-    right: 2,
-};
+import type { ImageViewerSettings } from './types';
 
 /**
  * 图片查看器类
@@ -78,35 +64,6 @@ export class ImageViewer {
      */
     updateSettings(settings: ImageViewerSettings): void {
         this.settings = settings;
-    }
-
-    /**
-     * 检查鼠标事件是否匹配配置的快捷键
-     */
-    private matchesShortcut(e: MouseEvent): boolean {
-        const { modifiers, button } = this.settings.shortcut;
-        const expectedButton = BUTTON_MAP[button] ?? 0;
-
-        // 检查鼠标按键
-        if (e.button !== expectedButton) return false;
-
-        // 检查所有配置的修饰键是否按下
-        for (const mod of modifiers) {
-            const key = MODIFIER_MAP[mod];
-            if (!e[key]) return false;
-        }
-
-        // 检查未配置的修饰键是否未按下（避免误触发）
-        const configuredMods = new Set(modifiers);
-        const allMods: ModifierKey[] = ['Ctrl', 'Alt', 'Meta'];
-        for (const mod of allMods) {
-            if (!configuredMods.has(mod)) {
-                const key = MODIFIER_MAP[mod];
-                if (e[key]) return false;
-            }
-        }
-
-        return true;
     }
 
     /**
@@ -471,10 +428,7 @@ export class ImageViewer {
      * 处理文档中的鼠标点击事件
      * 由 Plugin 在全局注册，判断是否触发图片查看
      */
-    handleDocumentClick(e: MouseEvent): void {
-        // 检查是否匹配快捷键
-        if (!this.matchesShortcut(e)) return;
-
+    handleDocumentDoubleClick(e: MouseEvent): void {
         // 查找点击目标是否为图片
         const target = e.target as HTMLElement;
         const img = target.closest('img');

@@ -24,12 +24,12 @@ export default class ImageViewerPlugin extends Plugin {
 		// 创建图片查看器实例
 		this.viewer = new ImageViewer(this.settings);
 
-		// 注册全局鼠标点击事件监听器
+		// 注册全局鼠标双击击事件监听器
 		// 使用捕获阶段确保在 Obsidian 默认处理之前拦截
 		this.clickHandler = (e: MouseEvent) => {
-			this.viewer?.handleDocumentClick(e);
+			this.viewer?.handleDocumentDoubleClick(e);
 		};
-		activeDocument.addEventListener('mousedown', this.clickHandler, true);
+		activeDocument.addEventListener('dblclick', this.clickHandler, true);
 
 		// 注册设置面板
 		this.addSettingTab(new ImageViewerSettingTab(this.app, this));
