@@ -35,6 +35,8 @@ export interface ImageViewerSettings {
     platform: PlatformType;
     /** 触发查看模式的快捷键配置 */
     shortcut: ShortcutConfig;
+    /** 是否自动缩放图片以适应窗口 */
+    autoZoom: boolean;
     /** 首次查看时图片占窗口的比例（80 = 占窗口 80%） */
     initialFitPercent: number;
     /** 毛玻璃样式配置 */

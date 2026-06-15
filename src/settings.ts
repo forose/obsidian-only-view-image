@@ -48,6 +48,7 @@ export const DEFAULT_SETTINGS: ImageViewerSettings = {
 		modifiers: [PLATFORM_DEFAULT_MODIFIER[IS_MAC ? 'mac' : 'win']],
 		button: 'left',
 	},
+	autoZoom: true,
 	initialFitPercent: 80,
 	blur: {
 		enabled: false,
@@ -149,21 +150,35 @@ export class ImageViewerSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('显示')
 			.setHeading();
-
-		// 首次查看占窗口比例
+		
+		// 自动缩放开关
 		new Setting(containerEl)
-			.setName('初始显示比例')
-			.setDesc('进入查看模式时图片占窗口的百分比（80 = 占窗口 80%）')
-			.addSlider((slider) => {
-				slider
-					.setLimits(20, 100, 5)
-					.setValue(this.plugin.settings.initialFitPercent)
-					.setDynamicTooltip()
+			.setName('自动缩放')
+			.setDesc('开启后，图片将自动适应窗口大小；关闭后可手动调整图片大小')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.autoZoom)
 					.onChange(async (value) => {
-						this.plugin.settings.initialFitPercent = value;
+						this.plugin.settings.autoZoom = value;
 						await this.plugin.saveSettings();
+						this.display(); // 刷新设置面板，控制默认显示比例的显示/隐藏
 					});
 			});
+		if (this.plugin.settings.autoZoom) {
+			new Setting(containerEl)
+				.setName('默认显示比例')
+				.setDesc('进入查看模式时图片占窗口的百分比（80 = 占窗口 80%）')
+				.addSlider((slider) => {
+					slider
+						.setLimits(20, 100, 5)
+						.setValue(this.plugin.settings.initialFitPercent)
+						.setDynamicTooltip()
+						.onChange(async (value) => {
+							this.plugin.settings.initialFitPercent = value;
+							await this.plugin.saveSettings();
+						});
+				});
+		}
 
 		// ===== 交互设置 =====
 		new Setting(containerEl)

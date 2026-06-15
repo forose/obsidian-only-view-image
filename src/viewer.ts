@@ -40,6 +40,7 @@ export class ImageViewer {
     private imageEl: HTMLImageElement | null = null;
     /** 工具栏元素 */
     private toolbar: HTMLElement | null = null;
+    private zoomMode: 'fit' | 'actual' = 'fit'; // fit: 适应窗口, actual: 实际尺寸
     /** 当前缩放比例 */
     private currentScale: number = 1;
     /** 当前旋转角度 */
@@ -174,7 +175,16 @@ export class ImageViewer {
         this.imageEl.addEventListener('load', () => {
             const naturalWidth = this.imageEl?.naturalWidth ?? 0;
             const naturalHeight = this.imageEl?.naturalHeight ?? 0;
-            this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
+            
+            // 根据自动缩放设置决定初始缩放比例
+            if (this.settings.autoZoom) {
+                // 开启自动缩放：计算适配窗口的比例
+                this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
+            } else {
+                // 关闭自动缩放：使用原始尺寸 1:1 显示
+                this.currentScale = 1;
+            }
+            
             this.applyTransform();
             // 移除加载中类，显示图片
             this.imageEl?.classList.remove('image-viewer-image-loading');
@@ -324,12 +334,17 @@ export class ImageViewer {
             this.currentRotation += 90;
             this.applyTransform();
         });
-
+        this.createZoomToggleButton();
         // 重置按钮
         this.createToolbarButton('restart_alt', '重置视图', () => {
             const naturalWidth = this.imageEl?.naturalWidth ?? 0;
             const naturalHeight = this.imageEl?.naturalHeight ?? 0;
-            this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
+            console.warn(this.settings.autoZoom)
+            if (this.settings.autoZoom) {
+                this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
+            } else {
+                this.currentScale = 1;
+            }
             this.currentRotation = 0;
             this.offset = { x: 0, y: 0 };
             this.applyTransform();
@@ -363,7 +378,45 @@ export class ImageViewer {
             onClick();
         });
     }
-
+    // 单独创建缩放按钮的方法
+    private createZoomToggleButton(): void {
+        if (!this.toolbar) return;
+        
+        // 初始化 zoomMode
+        this.zoomMode = this.settings.autoZoom ? 'fit' : 'actual';
+        
+        const btn = this.toolbar.createEl('button', {
+            cls: 'image-viewer-toolbar-btn',
+            attr: { title: this.zoomMode === 'fit' ? '切换到实际尺寸' : '适应窗口' },
+        });
+        
+        btn.createEl('span', {
+            cls: 'material-symbols-rounded',
+            text: 'Zoom_in',
+        });
+        
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            if (this.zoomMode === 'fit') {
+                // 切换到实际尺寸
+                this.zoomMode = 'actual';
+                this.currentScale = 1;
+                btn.setAttribute('title', '适应窗口');
+            } else {
+                // 切换到适应窗口
+                this.zoomMode = 'fit';
+                const naturalWidth = this.imageEl?.naturalWidth ?? 0;
+                const naturalHeight = this.imageEl?.naturalHeight ?? 0;
+                this.currentScale = this.calculateFitScale(naturalWidth, naturalHeight);
+                btn.setAttribute('title', '实际尺寸');
+            }
+            
+            this.currentRotation = 0;
+            this.offset = { x: 0, y: 0 };
+            this.applyTransform();
+        });
+    }
     /**
      * 应用 CSS 变换（缩放 + 旋转 + 平移）
      */
