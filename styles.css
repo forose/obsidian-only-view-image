@@ -110,8 +110,8 @@
 /* 图片加载中 - 隐藏以避免原始尺寸闪烁 */
 .image-viewer-image-loading {
     opacity: 0;
-    visibility: hidden;
     transition: none;
+    visibility: hidden;
 }
 
 /* 图片加载完成 - 入场动画 */
