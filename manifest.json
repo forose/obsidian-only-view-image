@@ -1,11 +1,10 @@
 {
-	"id": "lspzc-only-view-image",
-	"name": "lspzc x only view image",
-	"version": "1.0.7",
+	"id": "Image-viewer",
+	"name": "Image Viewer",
+	"version": "1.0.0",
 	"minAppVersion": "1.0.0",
-	"description": "查看图片，仅此而已",
-	"author": "lspzc",
-	"authorUrl": "https://github.com/lspzc/obsidian-only-view-image",
-	"fundingUrl": "https://github.com/lspzc/obsidian-only-view-image/issues",
+	"description": "图片查看器",
+	"author": "forose",
+	"authorUrl": "https://github.com/forose/obsidian-image-viewer.git",
 	"isDesktopOnly": false
 }
