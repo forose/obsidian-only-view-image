@@ -74,6 +74,7 @@
     height: 100%;
     user-select: none;
     cursor: default;
+    background: transparent;
 }
 
 /* 开启拖拽时的光标 */
@@ -109,12 +110,15 @@
 /* 图片加载中 - 隐藏以避免原始尺寸闪烁 */
 .image-viewer-image-loading {
     opacity: 0;
+    visibility: hidden;
     transition: none;
 }
 
 /* 图片加载完成 - 入场动画 */
 .image-viewer-image:not(.image-viewer-image-loading) {
-    animation: image-viewer-scale-in 0.25s cubic-bezier(0.2, 0, 0, 1);
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.15s ease-in-out;
 }
 
 @keyframes image-viewer-scale-in {
